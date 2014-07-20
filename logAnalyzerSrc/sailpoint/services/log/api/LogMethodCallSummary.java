@@ -13,28 +13,22 @@ import java.util.Stack;
  * @author trey.kirk
  * TODO: This is reimpleneting the same code as Abstract and other analyzers.  Refactor required.
  */
-public class LogMethodCallSummary extends AbstractTraceAspectLogAnalyzer {
+public class LogMethodCallSummary extends MethodStackAnalyzer {
 
-    private Map<String,Stack<String[]>> _threads;
-    private Stack<String> _methods;
-    private int _propNameMaxLength = 10;
     private String _targetClass;
     private String _targetMethod;
+    protected Stack<String> _methods;
 
-    /**
-     * Default constructor uses a default layout pattern
-     */
+
     public LogMethodCallSummary(String className, String methodName) {
-        this ((String)null, className, methodName);
+        this(null, className, methodName);
     }
-
+    
     public LogMethodCallSummary(String layoutPattern, String className, String methodName) {
-        super (layoutPattern);
-        _threads = new HashMap<String, Stack<String[]>>();
-        _methods = new Stack<String>();
+        super(layoutPattern);
         _targetClass = className;
         _targetMethod = methodName;
-
+        _methods = new Stack<String>();
     }
 
     /**
@@ -46,8 +40,8 @@ public class LogMethodCallSummary extends AbstractTraceAspectLogAnalyzer {
         super.addLogEvent(logEvent);
         String thread = getThread();
 
-        String[] bundle = new String[2];
         // each method is stored in a Map for each known thread
+        // should never be null
         Stack<String[]> methodStack = _threads.get(thread);
 
         if (isEntering()) {
@@ -55,16 +49,7 @@ public class LogMethodCallSummary extends AbstractTraceAspectLogAnalyzer {
             _log.debug("methodSig: " + methodSig);
             String categoryName = methodSig.get(0);
             String methodName = methodSig.get(1);
-            String fullMethodName = categoryName + ":" + methodName;
-            String formattedMethodSig = formatMethodSig(methodSig);
-            bundle[0] = fullMethodName;
-            bundle[1] = formattedMethodSig;
 
-            if (methodStack == null) {
-                methodStack = new Stack<String[]>();
-                _threads.put(thread, methodStack);
-            }
-            methodStack.push(bundle);
             boolean classTest = _targetClass == null || _targetClass.equals(categoryName);
             boolean methodTest = _targetMethod == null || _targetMethod.equals(methodName);
             if (classTest && methodTest) {
@@ -77,8 +62,8 @@ public class LogMethodCallSummary extends AbstractTraceAspectLogAnalyzer {
                     }
                     buff.append(next[1] + " )\n\n");
                 }
+                // Push the full 'entering' event in case 'fastParse' truncated too much
                 buff.append(logEvent + "\n\n");
-                //buff.append(logEvent + "\n\n----------------------------------------------------\n\n");
                 _methods.push(buff.toString());
             }
         } else if (isExiting()) {
@@ -87,49 +72,15 @@ public class LogMethodCallSummary extends AbstractTraceAspectLogAnalyzer {
             String methodName = methodSig.get(1);
             boolean classTest = _targetClass == null || _targetClass.equals(categoryName);
             boolean methodTest = _targetMethod == null || _targetMethod.equals(methodName);
-            if (methodStack == null || methodStack.isEmpty()) {
-                _log.warn("Ignoring (Exiting before having entered): " + logEvent);
-                return;
-            }
-            // exiting, pop off the stack and see ifn it matches
-            String exitMethodName = methodSig.get(0) + ":" + methodSig.get(1);
-            boolean match = false;
-            String thatMethod = null;
-            while (!match && !methodStack.isEmpty()) {
-                String[] next = methodStack.pop();
-                thatMethod = next[0];
-                if (thatMethod.equals(exitMethodName)) {
-                    match = true;
-                }
-            }
-            // new: now I want to see how the method returns!
-            if (methodTest && classTest && match && !_methods.isEmpty()) {
+
+            // Push the full 'exiting' event so we can capture the return value
+            if (methodTest && classTest && !_methods.isEmpty()) {
                 StringBuffer lastMethodBuff = new StringBuffer(_methods.pop());
                 lastMethodBuff.append(logEvent + "\n\n----------------------------------------------------\n\n");
                 _methods.push(lastMethodBuff.toString());
             }
         }
 
-    }
-
-    /*
-     * Converts the method signature list into a pretty summary.
-     */
-    private String formatMethodSig(List<String> methodSig) {
-        /* something like:
-         * \tparamName: <-- normalized \s --> paramValue\n
-         */
-        StringBuffer buff = new StringBuffer();
-        for (int i = 2; i < methodSig.size(); i += 2) {
-            String propName = methodSig.get(i);
-            String propValue = methodSig.get(i + 1);
-            String formatted = String.format("%1$-" + _propNameMaxLength + "s", propName);
-            buff.append("\t" + formatted + " : " + propValue + "\n");
-        }
-        if (buff.length() > 0) {
-            buff.delete(buff.length() - 1, buff.length());
-        }
-        return buff.toString();
     }
 
     /**

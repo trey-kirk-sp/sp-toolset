@@ -11,7 +11,7 @@ import java.util.Stack;
  * @author trey.kirk
  *
  */
-public class LogErrorSummary extends AbstractTraceAspectLogAnalyzer {
+public class LogErrorSummary extends MethodStackAnalyzer {
 
     private Map<String,Stack<String[]>> _threads;
     private List<String> _errors;
@@ -98,40 +98,6 @@ public class LogErrorSummary extends AbstractTraceAspectLogAnalyzer {
             _errors.add(buff.toString());
         }
 
-    }
-
-    /*
-     * Tests if the log event is an error
-     */
-    private boolean isError() {
-        String priority = getPriority();
-        // hmmm, may need to come back to this. This should be matched with the priority
-        // pattern instead of doing a string equality check.  Some users will log errors not
-        // as 'ERROR', but just 'E'
-        if (Log4jPatternConverter.PRIORITY_ERROR.equals(priority)) {
-            return true;
-        }
-        return false;
-    }
-
-    /*
-     * Converts the method signature list into a pretty summary.
-     */
-    private String formatMethodSig(List<String> methodSig) {
-        /* something like:
-         * \tparamName: <-- normalized \s --> paramValue\n
-         */
-        StringBuffer buff = new StringBuffer();
-        for (int i = 2; i < methodSig.size(); i += 2) {
-            String propName = methodSig.get(i);
-            String propValue = methodSig.get(i + 1);
-            String formatted = String.format("%1$-" + _propNameMaxLength + "s", propName);
-            buff.append("\t" + formatted + " : " + propValue + "\n");
-        }
-        if (buff.length() > 0) {
-            buff.delete(buff.length() - 1, buff.length());
-        }
-        return buff.toString();
     }
 
     /**

@@ -103,77 +103,36 @@ public abstract class AbstractTraceAspectLogAnalyzer implements LogAnalyzer {
         this ((String)null);
     }
 
-    /**
-     * Offers next log event to parse, analyze.  This class simply maintains the method
-     * call stack.  Subclasses will want access to the method / thread stacks and use them
-     * for their own purposes.  Need to provide accessors for those
-     */
-    public void addLogEvent(String logEvent) {
-        // When the try fast flag is set and the event is greater than some threshold of characters,
-        // 	- truncate the message at the limit
-        // 	- for now, let's just ditch what's pruned
-        //  - future: save the fatty parts and append to the message
 
+    @Override
+    public void addLogEvent(String logEvent) {
+        // all we're doing here is parsing the event
         _log.trace("Logging event: " + logEvent);
         if (_tryFast && logEvent.length() > _fastLimit) {
             logEvent = logEvent.substring(0, _fastLimit);
             // to help with parsing later on, let's close the line with a )
             logEvent = logEvent + ")";
         }
+        /*
+         * Since the message portion of our trace is commonly the most laden
+         * with characters to parse, avoid having to parse it more than once.
+         * This clears it so it will know to parse the event for a message.
+         */
         _message = null;
         _converter.setLogEvent(logEvent);
 
-        // AbstractTraceAspectLogAnalyzer is specifically useful because of the known
-        // format of 'Entering' and 'Exiting' -- So building the call
-        // stacks should happen here
-        String thread = getThread();
-
-        String[] bundle = new String[2];
-        // each method is stored in a Map for each known thread
-        Stack<String[]> methodStack = _threads.get(thread);
-
-        // TODO: Should be able to pull up the method name detection / construction to
-        // a single block outside the conditional
-        if (isEntering()) {
-            List<String> methodSig = getMethodSignature();
-            _log.debug("methodSig: " + methodSig);
-            String categoryName = methodSig.get(0);
-            String methodName = methodSig.get(1);
-            String fullMethodName = categoryName + ":" + methodName;
-            String formattedMethodSig = formatMethodSig(methodSig);
-            bundle[0] = fullMethodName;
-            bundle[1] = formattedMethodSig;
-
-            if (methodStack == null) {
-                methodStack = new Stack<String[]>();
-                _threads.put(thread, methodStack);
-            }
-            methodStack.push(bundle);
-        } else if (isExiting()) {
-            List<String> methodSig = getMethodSignature();
-            if (methodStack == null || methodStack.isEmpty()) {
-                _log.warn("Ignoring (Exiting before having entered): " + logEvent);
-                return;
-            }
-            // exiting, pop off the stack and see ifn it matches
-            String exitMethodName = methodSig.get(0) + ":" + methodSig.get(1);
-            boolean match = false;
-            String thatMethod = null;
-            while (!match && !methodStack.isEmpty()) {
-                String[] next = methodStack.pop();
-                thatMethod = next[0];
-                if (thatMethod.equals(exitMethodName)) {
-                    match = true;
-                }
-            }
-        }
     }
-
     /**
      * Extracts the 'Message' token of the log event
      * @return
      */
     protected String parseMsg() {
+        /*
+         * Despite our method name, we don't really parse this value for each call
+         * like we do all other tokens.  Instead, the message is parsed one time
+         * per logEvent and then cached.  logEvent will reset our field to ensure
+         * we parse it when we need to.
+         */
         if (_message == null) {
             _message = _converter.parseToken(Log4jPatternConverter.Identifier.MESSAGE);
         }
@@ -460,6 +419,31 @@ public abstract class AbstractTraceAspectLogAnalyzer implements LogAnalyzer {
         }
 
         return callStack;
+    }
+    
+    public boolean isThrowing() {
+        String message = parseMsg();
+        if (message != null && message.startsWith("Throwing ")) {
+            _log.trace("isThrowing: true");
+            return true;
+        } else {
+            _log.trace("isThrowing: false");
+            return false;
+        }
+    }
+
+    public boolean isError() {
+        String priority = getPriority();
+       /* 
+        * In log4j trace, an error message can have any of the following priority values:
+        * E
+        * ERR
+        * ERROR
+        * etc...
+        *
+        * So go with a basic 'startsWith' test
+        */
+        return priority != null && Log4jPatternConverter.PRIORITY_ERROR.startsWith(priority);
     }
 
 }
