@@ -9,7 +9,7 @@ import java.util.Stack;
  * @author trey.kirk
  *
  */
-public class LogFormatter extends AbstractTraceAspectLogAnalyzer {
+public class LogFormatter extends MethodStackAnalyzer {
 
     private static final String INDENT = "   ";
     private List<String> _msgs;

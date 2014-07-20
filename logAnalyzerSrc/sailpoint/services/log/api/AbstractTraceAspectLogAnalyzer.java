@@ -27,8 +27,6 @@ public abstract class AbstractTraceAspectLogAnalyzer implements LogAnalyzer {
 
     static Log _log = LogFactory.getLog(AbstractTraceAspectLogAnalyzer.class);
 
-    // If we have thread inforamation, this map is used to keep them organized
-    private Map<String,Stack<String[]>> _threads;
     private int _propNameMaxLength = 10;
 
     /**
@@ -84,7 +82,6 @@ public abstract class AbstractTraceAspectLogAnalyzer implements LogAnalyzer {
      */
     public AbstractTraceAspectLogAnalyzer(String layoutPattern) {
         _log.debug("layoutPattern: " + layoutPattern);
-        _threads = new HashMap<String, Stack<String[]>>();
         if (layoutPattern != null) {
             _layoutPattern = layoutPattern;
         } else {
@@ -154,7 +151,7 @@ public abstract class AbstractTraceAspectLogAnalyzer implements LogAnalyzer {
         // TODO: This is based on SailPoint's trace injection class.  Why not abstract this
         // string to expand its uses
         String message = parseMsg();
-        if (message != null && message.matches("^Entering .*\\Q(\\E.*$")) {
+        if (message != null && message.startsWith("Entering ")) {
             _log.trace("isEntering: true");
             return true;
         } else {
@@ -408,17 +405,6 @@ public abstract class AbstractTraceAspectLogAnalyzer implements LogAnalyzer {
             buff.delete(buff.length() - 1, buff.length());
         }
         return buff.toString();
-    }
-
-    protected Stack<String[]> getCallStack (String forThread) {
-        Stack<String[]> callStack = null;
-        Stack<String[]> current = _threads.get(forThread);
-        if (current != null) {
-            callStack = new Stack<String[]>(); // defensive copy
-            callStack.addAll(current);  // need to check this is copied in the right order
-        }
-
-        return callStack;
     }
     
     public boolean isThrowing() {

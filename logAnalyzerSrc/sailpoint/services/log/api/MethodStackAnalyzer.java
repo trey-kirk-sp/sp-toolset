@@ -9,13 +9,13 @@ public abstract class MethodStackAnalyzer extends AbstractTraceAspectLogAnalyzer
 
     protected Map<String,Stack<String[]>> _threads;
     protected int _propNameMaxLength = 10;
-    protected Map<String,Stack<String[]>> _throwingMethods;
+    protected Map<String, Map<String,Stack<String[]>>> _throwingMethods;
 
 
     public MethodStackAnalyzer(String layoutPattern) {
         super (layoutPattern);
         _threads = new HashMap<String, Stack<String[]>>();
-        _throwingMethods = new HashMap<String, Stack<String[]>>();
+        _throwingMethods = new HashMap<String, Map<String,Stack<String[]>>>();
     }
 
     /**
@@ -61,7 +61,12 @@ public abstract class MethodStackAnalyzer extends AbstractTraceAspectLogAnalyzer
                         // iterates like a Vector, so build like a Vector
                         throwingStack.add(methodTokens);
                     }
-                    _throwingMethods.put(exitMethodName, throwingStack);
+                    Map<String, Stack<String[]>> threadStackMap = _throwingMethods.get(thread);
+                    if (threadStackMap == null) {
+                        threadStackMap = new HashMap<String, Stack<String[]>>();
+                        _throwingMethods.put(thread, threadStackMap);
+                    }
+                    threadStackMap.put(exitMethodName, throwingStack);
                 }
                 boolean match = false;
                 String thatMethod = null;
@@ -96,5 +101,16 @@ public abstract class MethodStackAnalyzer extends AbstractTraceAspectLogAnalyzer
         return buff.toString();
     }
 
+
+    protected Stack<String[]> getCallStack (String forThread) {
+        Stack<String[]> callStack = null;
+        Stack<String[]> current = _threads.get(forThread);
+        if (current != null) {
+            callStack = new Stack<String[]>(); // defensive copy
+            callStack.addAll(current);  // need to check this is copied in the right order
+        }
+
+        return callStack;
+    }
 
 }
