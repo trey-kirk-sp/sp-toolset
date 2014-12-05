@@ -12,7 +12,7 @@ public interface LogAnalyzer {
 	 * The "feeder" method for the analyzer
 	 * @param message
 	 */
-	public void addLogEvent (String message);
+	public boolean addLogEvent (String message);
 	
 	/**
 	 * The "analysis" results method for the analyzer
@@ -20,7 +20,4 @@ public interface LogAnalyzer {
 	 */
 	public String compileSummary();
 	
-	public void setDoFast (boolean tryFast);
-	
-	public void setFastParseCharacterLimit (int limit);
 }

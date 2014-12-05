@@ -19,14 +19,18 @@ import sailpoint.services.log.api.Log4jPatternConverter.Identifier;
  * This aspect injects Enter / Exit tracing for each method allowing one to gain information about
  * the method's inputs, outputs, and timing.  This abstract class offers utility methods that compiles
  * that information.<br>
+ * <br>
+ * Currently, only timing gathering is implemented.<br>
+ * <br>
  * Leverages {@link Log4jPatternConverter} to parse the log event messages.
  * @author trey.kirk
  *
  */
-public abstract class AbstractTraceAspectLogAnalyzer implements LogAnalyzer {
+public abstract class AbstractTraceAspectLogAnalyzer extends FastLogAnalyzer {
 
     static Log _log = LogFactory.getLog(AbstractTraceAspectLogAnalyzer.class);
 
+    private Map<String,Stack<String[]>> _threads;
     private int _propNameMaxLength = 10;
 
     /**
@@ -43,20 +47,9 @@ public abstract class AbstractTraceAspectLogAnalyzer implements LogAnalyzer {
      */
     public static final String DEFAULT_LAYOUT_PATTERN = "%d{ISO8601} %5p %t %c{4}:%L - %m%n";
 
-    /**
-     * When fast parse is enabled, we limit the number of characters from the feed per line to
-     * parse.  This results in the compiled output being based on less detail, but that's usually
-     * contextual information, ala the actual trace message.  Timing loggers aren't likely to
-     * be affected much by this truncation
-     */
-    public static final int FAST_LIMIT = 250;
-
     private Log4jPatternConverter _converter;
     private String _layoutPattern;
     private String _message;
-    private boolean _tryFast = false;
-    private int _fastLimit = FAST_LIMIT;
-
     /**
      * This attribute enables the behavior of 'correcting' date values.  Correction may need to occur when
      * the LayoutPattern is one that results in ambiguous time stamps.  That is, time stamps that don't specify
@@ -72,7 +65,9 @@ public abstract class AbstractTraceAspectLogAnalyzer implements LogAnalyzer {
      * Set this value to 'false' to disable this correction scheme.
      */
     public boolean autoCorrectDates = true;
+
     private Date _lastDate;
+
     private long _dateAdjustment = 0;
 
 
@@ -82,6 +77,7 @@ public abstract class AbstractTraceAspectLogAnalyzer implements LogAnalyzer {
      */
     public AbstractTraceAspectLogAnalyzer(String layoutPattern) {
         _log.debug("layoutPattern: " + layoutPattern);
+        _threads = new HashMap<String, Stack<String[]>>();
         if (layoutPattern != null) {
             _layoutPattern = layoutPattern;
         } else {
@@ -100,25 +96,69 @@ public abstract class AbstractTraceAspectLogAnalyzer implements LogAnalyzer {
         this ((String)null);
     }
 
-
+    /**
+     * Offers next log event to parse, analyze.  This class simply maintains the method
+     * call stack.  Subclasses will want access to the method / thread stacks and use them
+     * for their own purposes.  Need to provide accessors for those
+     */
     @Override
-    public void addLogEvent(String logEvent) {
-        // all we're doing here is parsing the event
+    public boolean addLogEvent(String logEvent) {
+        // When the try fast flag is set and the event is greater than some threshold of characters,
+        // 	- truncate the message at the limit
+        // 	- for now, let's just ditch what's pruned
+        //  - future: save the fatty parts and append to the message
+
         _log.trace("Logging event: " + logEvent);
-        if (_tryFast && logEvent.length() > _fastLimit) {
-            logEvent = logEvent.substring(0, _fastLimit);
-            // to help with parsing later on, let's close the line with a )
-            logEvent = logEvent + ")";
-        }
-        /*
-         * Since the message portion of our trace is commonly the most laden
-         * with characters to parse, avoid having to parse it more than once.
-         * This clears it so it will know to parse the event for a message.
-         */
+        logEvent = trimmedMessage(logEvent);
         _message = null;
         _converter.setLogEvent(logEvent);
 
+        // AbstractTraceAspectLogAnalyzer is specifically useful because of the known
+        // format of 'Entering' and 'Exiting' -- So building the call
+        // stacks should happen here
+        String thread = getThread();
+
+        String[] bundle = new String[2];
+        // each method is stored in a Map for each known thread
+        Stack<String[]> methodStack = _threads.get(thread);
+
+        if (isEntering()) {
+            List<String> methodSig = getMethodSignature();
+            _log.debug("methodSig: " + methodSig);
+            String categoryName = methodSig.get(0);
+            String methodName = methodSig.get(1);
+            String fullMethodName = categoryName + ":" + methodName;
+            String formattedMethodSig = formatMethodSig(methodSig);
+            bundle[0] = fullMethodName;
+            bundle[1] = formattedMethodSig;
+
+            if (methodStack == null) {
+                methodStack = new Stack<String[]>();
+                _threads.put(thread, methodStack);
+            }
+            methodStack.push(bundle);
+        } else if (isExiting()) {
+            List<String> methodSig = getMethodSignature();
+            if (methodStack == null || methodStack.isEmpty()) {
+                _log.warn("Ignoring (Exiting before having entered): " + logEvent);
+                return true;
+            }
+            // exiting, pop off the stack and see ifn it matches
+            String exitMethodName = methodSig.get(0) + ":" + methodSig.get(1);
+            boolean match = false;
+            String thatMethod = null;
+            while (!match && !methodStack.isEmpty()) {
+                String[] next = methodStack.pop();
+                thatMethod = next[0];
+                if (thatMethod.equals(exitMethodName)) {
+                    match = true;
+                }
+            }
+        }
+        // by default we always return true. Let ancestors overwrite and decide otherwise
+        return true;
     }
+
     /**
      * Extracts the 'Message' token of the log event
      * @return
@@ -178,16 +218,6 @@ public abstract class AbstractTraceAspectLogAnalyzer implements LogAnalyzer {
             _log.trace("isExiting: false");
             return false;
         }
-    }
-
-    public void setDoFast (boolean tryFast) {
-        _log.debug("Fast mode: " + tryFast);
-        _tryFast = tryFast;
-    }
-
-    public void setFastParseCharacterLimit (int fastParseLimit) {
-        _log.debug("Fast mode character limit: " + fastParseLimit);
-        _fastLimit = fastParseLimit;
     }
 
     /**
@@ -281,8 +311,9 @@ public abstract class AbstractTraceAspectLogAnalyzer implements LogAnalyzer {
 
     /**
      * Extracts the method name from the log event.  Note that while {@link Log4jPatternConverter}
-     * support extracting the Method token, this method will attempt to extract the method
-     * name as stated in the Message token instead.
+     * support extracting the Method token, this method will first attempt to extract the method
+     * name as stated in the Message token.  If none is found, it will then defer to finding
+     * the Method token in from the log event.
      * @see Log4jPatternConverter#parseToken(sailpoint.services.log.api.Log4jPatternConverter.Identifier, String)
      */
     public String getMethod() {
@@ -322,6 +353,56 @@ public abstract class AbstractTraceAspectLogAnalyzer implements LogAnalyzer {
             return "";
         }
 
+        /*
+		if (isEntering() || isExiting()) {
+			String message = parseMsg();
+			String method = "";
+			String[] tokens = message.split("^Entering |^Exiting ");
+
+			if (tokens.length != 2) {
+				return method;
+			}
+
+			String msg = tokens[1];
+			String className = parseCategory();
+
+			if (isEntering()) {
+				Pattern p = Pattern.compile("^(Entering )([\\S]+)\\((.*)\\)", Pattern.DOTALL);
+				// the message may have newlines.  ...what to do
+				Matcher m = p.matcher(message);
+				StringBuffer methodBuff = new StringBuffer();
+				if (m.matches()) {
+					// method is group 2
+					methodBuff.append(m.group(2) + "(");
+					// signature is group 3
+					String signature = m.group(3);
+					// Extract the types from the signautre
+					Pattern sigPattern = Pattern.compile("([a-zA-Z0-9_$?]+) = .+?,?", Pattern.DOTALL);
+					Matcher sigMatcher = sigPattern.matcher(signature);
+					boolean first = true;
+					while (sigMatcher.find()) {
+						String nextGroup = sigMatcher.group();
+						String token = nextGroup.split(" = ")[0];
+						if (!first) {
+							methodBuff.append("," + token);
+						} else {
+							first = false;
+							methodBuff.append(token);
+						}
+					}
+				}
+
+				method = className + ":" + methodBuff.toString() + ")";
+			} else {
+				method = className + ":" + msg.split(" = ")[0];
+			}
+
+			return method;
+		} else {
+			// the only other place for the method is via the Method identifier from the log4jconverter
+			return _converter.parseToken(Log4jPatternConverter.Identifier.METHOD);
+		}
+         */
 
     }
 
@@ -430,6 +511,17 @@ public abstract class AbstractTraceAspectLogAnalyzer implements LogAnalyzer {
         * So go with a basic 'startsWith' test
         */
         return priority != null && Log4jPatternConverter.PRIORITY_ERROR.startsWith(priority);
+    }
+
+    protected Stack<String[]> getCallStack (String forThread) {
+        Stack<String[]> callStack = null;
+        Stack<String[]> current = _threads.get(forThread);
+        if (current != null) {
+            callStack = new Stack<String[]>(); // defensive copy
+            callStack.addAll(current);  // need to check this is copied in the right order
+        }
+
+        return callStack;
     }
 
 }

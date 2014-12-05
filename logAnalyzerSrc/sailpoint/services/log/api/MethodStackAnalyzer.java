@@ -23,7 +23,7 @@ public abstract class MethodStackAnalyzer extends AbstractTraceAspectLogAnalyzer
      * if it is an ERROR and create the summary information for that error.
      */
     @Override
-    public void addLogEvent(String logEvent) {
+    public boolean addLogEvent(String logEvent) {
         super.addLogEvent(logEvent);
         String thread = getThread();
 
@@ -51,7 +51,7 @@ public abstract class MethodStackAnalyzer extends AbstractTraceAspectLogAnalyzer
             } else if (isExiting()) {
                 if (methodStack == null || methodStack.isEmpty()) {
                     _log.warn("Ignoring (Exiting before having entered): " + logEvent);
-                    return;
+                    return true;
                 }
                 // exiting, pop off the stack and see ifn it matches
                 String exitMethodName = methodSig.get(0) + ":" + methodSig.get(1);
@@ -79,6 +79,7 @@ public abstract class MethodStackAnalyzer extends AbstractTraceAspectLogAnalyzer
                 }
             }
         }
+        return true;
     }
 
     /*

@@ -3,6 +3,8 @@ package sailpoint.services.log.api;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Just inserts indentation into the log data for easier reading
@@ -20,7 +22,7 @@ public class LogFormatter extends MethodStackAnalyzer {
     }
 
     @Override
-    public void addLogEvent(String logEvent) {
+    public boolean addLogEvent(String logEvent) {
         super.addLogEvent(logEvent);
 
         // stack appended, now display-lay
@@ -37,6 +39,7 @@ public class LogFormatter extends MethodStackAnalyzer {
         }
         msg.append(logEvent);
         _msgs.add(msg.toString());
+        return true;
     }
 
     public String compileSummary() {
