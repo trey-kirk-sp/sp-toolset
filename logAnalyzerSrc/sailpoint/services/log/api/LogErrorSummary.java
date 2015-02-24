@@ -12,36 +12,36 @@ import java.util.Stack;
  *
  */
 public class LogErrorSummary extends MethodStackAnalyzer {
-	
-	private Map<String,Stack<String[]>> _threads;
-	private List<String> _errors;
-	private int _propNameMaxLength = 10;
-	
-	/**
-	 * Default constructor uses a default layout pattern
-	 */
-	public LogErrorSummary() {
-		this ((String)null);
-	}
-	
+
+    private Map<String,Stack<String[]>> _threads;
+    private List<String> _errors;
+    private int _propNameMaxLength = 10;
+
+    /**
+     * Default constructor uses a default layout pattern
+     */
+    public LogErrorSummary() {
+        this ((String)null);
+    }
+
     /**
      * The "good" constructor
      * @param layoutPattern
      */
-	public LogErrorSummary(String layoutPattern) {
-		super (layoutPattern);
-		_threads = new HashMap<String, Stack<String[]>>();
-		_errors = new ArrayList<String>();
-	}
-	
-	/**
-	 * For each log event, test if has an 'Entering' value and capture the method signature information.  Otherwise, test
-	 * if it is an ERROR and create the summary information for that error.
-	 */
-	@Override
-	public boolean addLogEvent(String logEvent) {
-		super.addLogEvent(logEvent);
-		String thread = getThread();
+    public LogErrorSummary(String layoutPattern) {
+        super (layoutPattern);
+        _threads = new HashMap<String, Stack<String[]>>();
+        _errors = new ArrayList<String>();
+    }
+
+    /**
+     * For each log event, test if has an 'Entering' value and capture the method signature information.  Otherwise, test
+     * if it is an ERROR and create the summary information for that error.
+     */
+    @Override
+    public boolean addLogEvent(String logEvent) {
+        super.addLogEvent(logEvent);
+        String thread = getThread();
         if (isThrowing()) {
             // found an error!
             // get the throwing stack for our current method
@@ -68,17 +68,17 @@ public class LogErrorSummary extends MethodStackAnalyzer {
             _errors.add(logEvent + "\n\n----------------------------------------------------\n\n");
         }
         return true;
-	}
+    }
 
-	/**
-	 * Returns a String of the pretty error messages we've built
-	 */
-	public String compileSummary() {
-		StringBuffer out = new StringBuffer();
-		for (String nextError : _errors) {
-			out.append(nextError + "\n");
-		}
-		return out.toString();
-	}
+    /**
+     * Returns a String of the pretty error messages we've built
+     */
+    public String compileSummary() {
+        StringBuffer out = new StringBuffer();
+        for (String nextError : _errors) {
+            out.append(nextError + "\n");
+        }
+        return out.toString();
+    }
 
 }

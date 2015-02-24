@@ -12,56 +12,56 @@ import java.util.regex.Pattern;
  */
 public class DosFileNameFilter implements FilenameFilter {
 
-	private Pattern _pattern;
+    private Pattern _pattern;
 
-	public DosFileNameFilter (String filePattern) {
-		// need to quote non * and ?
-		int start = 0;
-		int starEnd = filePattern.indexOf("*");
-		int questEnd = filePattern.indexOf("?");
-		int end = getLowestValid(starEnd, questEnd);
-		
-		StringBuffer quotedText = new StringBuffer();
-		while (end != -1) {
-			// found a string to 'quote'
-			quotedText.append("\\Q");
-			quotedText.append(filePattern.substring(start, end));
-			quotedText.append("\\E");
-			quotedText.append(filePattern.substring(end, end + 1));
-			start = end + 1;
-			starEnd = filePattern.indexOf("*", start);
-			questEnd = filePattern.indexOf("?", start);
-			end = getLowestValid(starEnd, questEnd);
-		}
+    public DosFileNameFilter (String filePattern) {
+        // need to quote non * and ?
+        int start = 0;
+        int starEnd = filePattern.indexOf("*");
+        int questEnd = filePattern.indexOf("?");
+        int end = getLowestValid(starEnd, questEnd);
 
-		if (start < filePattern.length()) {
-			quotedText.append("\\Q" + filePattern.substring(start, filePattern.length()) + "\\E");
-		}
+        StringBuffer quotedText = new StringBuffer();
+        while (end != -1) {
+            // found a string to 'quote'
+            quotedText.append("\\Q");
+            quotedText.append(filePattern.substring(start, end));
+            quotedText.append("\\E");
+            quotedText.append(filePattern.substring(end, end + 1));
+            start = end + 1;
+            starEnd = filePattern.indexOf("*", start);
+            questEnd = filePattern.indexOf("?", start);
+            end = getLowestValid(starEnd, questEnd);
+        }
 
-		String regex = quotedText.toString().replaceAll("\\*", ".*");
-		regex = regex.replaceAll("\\?", ".");
-		_pattern = Pattern.compile(regex);
-	}
+        if (start < filePattern.length()) {
+            quotedText.append("\\Q" + filePattern.substring(start, filePattern.length()) + "\\E");
+        }
 
-	private int getLowestValid(int starEnd, int questEnd) {
-		
-		if (starEnd < 0 && questEnd < 0) {
-			return -1;
-		} else if (starEnd < 0) {
-			return questEnd;
-		} else if (questEnd < 0) {
-			return starEnd;
-		} else {
-			return (questEnd < starEnd ? questEnd : starEnd);
-		}
-	}
+        String regex = quotedText.toString().replaceAll("\\*", ".*");
+        regex = regex.replaceAll("\\?", ".");
+        _pattern = Pattern.compile(regex);
+    }
 
-	public boolean accept(File dir, String name) {
-		return _pattern.matcher(name).matches();
-	}
-	
-	@Override
-	public String toString() {
-		return _pattern.toString();
-	}
+    private int getLowestValid(int starEnd, int questEnd) {
+
+        if (starEnd < 0 && questEnd < 0) {
+            return -1;
+        } else if (starEnd < 0) {
+            return questEnd;
+        } else if (questEnd < 0) {
+            return starEnd;
+        } else {
+            return (questEnd < starEnd ? questEnd : starEnd);
+        }
+    }
+
+    public boolean accept(File dir, String name) {
+        return _pattern.matcher(name).matches();
+    }
+
+    @Override
+    public String toString() {
+        return _pattern.toString();
+    }
 }
