@@ -17,6 +17,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.PropertyConfigurator;
 
 import sailpoint.services.log.api.AbstractTraceAspectLogAnalyzer;
+import sailpoint.services.log.api.DupeFilterAnalyzer;
 import sailpoint.services.log.api.FastLogAnalyzer;
 import sailpoint.services.log.api.LogAnalyzer;
 import sailpoint.services.log.api.LogErrorSummary;
@@ -58,6 +59,7 @@ public class LogAnalyzerApp {
 	private static final String ANALYZER_FORMATTER = "formatter";
 	private static final String ANALYZER_FILTER = "filter";
 	private static final String ANALYZER_TEST = "test";
+	private static final String ANALYZER_DUPE = "duplicates";
 	private static final String[] TYPE_ALLOWED_VALUES = {
 		ANALYZER_TIMER,
 		ANALYZER_TRENDER,
@@ -66,7 +68,8 @@ public class LogAnalyzerApp {
 		ANALYZER_METHOD,
 		ANALYZER_FILTER,
 		ANALYZER_FORMATTER,
-		ANALYZER_TEST
+		ANALYZER_TEST,
+		ANALYZER_DUPE
 	};
 
 	// Command line arguments
@@ -167,6 +170,9 @@ public class LogAnalyzerApp {
 			} else if (type.equals(ANALYZER_TEST)) {
 			    LogTestParse testParse = new LogTestParse(_layoutPattern);
 			    _analyzers.add(testParse);
+			} else if (type.equals(ANALYZER_DUPE)) {
+			    DupeFilterAnalyzer dupeAnalyzer = new DupeFilterAnalyzer(_layoutPattern);
+			    _analyzers.add(dupeAnalyzer);
 			}
 		}
 		
