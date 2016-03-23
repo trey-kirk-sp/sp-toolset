@@ -599,9 +599,6 @@ public class Log4jPatternConverter {
      */
     public void setLogEvent (String logEvent) {
         _log.trace("setLogEvent: " + logEvent);
-        // multi-line values are difficult.  So replace all newline characters with a known marker.
-        // Then, upon parseToken, re-add \n
-        //_currentEvent = logEvent.replace("\n", NEWLINE_SEQUENCE);
         _currentEvent = logEvent;
         _eventMatcher = _linePattern.matcher(_currentEvent);
         _eventMatcher.matches();

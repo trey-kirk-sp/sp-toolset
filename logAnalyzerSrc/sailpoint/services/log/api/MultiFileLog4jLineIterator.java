@@ -75,6 +75,7 @@ public class MultiFileLog4jLineIterator implements Iterable<String> {
         private List<File> _fileList;
         private Iterator<File> _fileIterator;
         private File _file;
+        private boolean _trim = true;
 
         private LineIterator (File directory, FilenameFilter filenameFilter, String layoutPattern) throws IOException {
             _converter = new Log4jPatternConverter(layoutPattern);
@@ -226,7 +227,17 @@ public class MultiFileLog4jLineIterator implements Iterable<String> {
                     //line = ltrim(line);
                 }
 
-                if (linePattern.matcher(line).matches()) {
+                // trim the line we're matching. We don't care about the actual data so much
+                // as the pattern. We assume that what we're trimming is from the message token
+                // and only our analyzers care about that
+                boolean matched = false;
+                if (_trim) {
+                    int end = line.length() > 512 ? 512 : line.length();
+                    matched = linePattern.matcher(line.substring(0, end)).matches();
+                } else {
+                    matched = linePattern.matcher(line).matches();
+                }
+                if (matched) {
                     // this is the next line
                     _currentLine = buff.toString();
                     _lastLine = line;
@@ -291,14 +302,19 @@ public class MultiFileLog4jLineIterator implements Iterable<String> {
      * @throws IOException **/
 
     public static void main (String[] args) throws IOException {
-        File directory = new File("c:\\tmp\\test");
-        String namePattern = "rolling*";
+        File directory = new File("C:\\etn_data\\21645 - Scale certs n stuff\\");
+        String namePattern = "sailpoint-21645.log";
         MultiFileLog4jLineIterator tester = new MultiFileLog4jLineIterator(directory, namePattern, "%d{ISO8601} %5p %t %c{4}:%L - %m%n");
         LineIterator iter = (LineIterator) tester.iterator();
+        int count = 0;
+        int report = 500;
         while (iter.hasNext()) {
             String next = iter.next();
-            System.out.print(iter._file + ":::");
-            System.out.println(next);
+            if (count % report == 0) {
+                System.out.print(count + "::" + iter._file + ":::");
+                System.out.println(next);
+            }
+            count++;
 
         }
     }
