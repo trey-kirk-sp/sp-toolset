@@ -6,6 +6,7 @@ package com.biliruben.util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,7 +26,7 @@ import org.apache.commons.logging.LogFactory;
  * @author trey.kirk
  *
  */
-public class OptionLegend {
+public class OptionLegend implements Comparable<OptionLegend>{
 
 	//TODO: add a setExample method to allow the user to provide an example
 	// value or short description.  Detect whitespace and provide quotes when
@@ -72,7 +73,7 @@ public class OptionLegend {
 	 * Use {@link GetOpts#getUnswitchedOptions()} to retrieve those values.
 	 */
 	protected static final String OPT_DEFAULT_NAME = "DEFAULT";
-	protected static final String OPT_PROPERTY_FILE = "properties";
+	public static final String OPT_PROPERTY_FILE = "properties";
 	protected static final String OPT_HELP = "?";
 	protected static final String OPT_PROPERTY_GROUP = "propertyGroup";
 
@@ -122,7 +123,12 @@ public class OptionLegend {
 	 */
 	public OptionLegend(String optName) {
 		this (optName, null);
+	}
 
+	@Deprecated
+	private OptionLegend(String optName, boolean allow) {
+        _log.trace ("Creating legend: name=" + optName);
+        setName(optName);
 	}
 
 	/**
@@ -450,7 +456,7 @@ public class OptionLegend {
 	}
 	
 	public static OptionLegend createPropertyLegend() {
-		OptionLegend propertyLegend = new OptionLegend(OPT_PROPERTY_FILE);
+		OptionLegend propertyLegend = new OptionLegend(OPT_PROPERTY_FILE, true);
 		propertyLegend.setRequired(false);
 		propertyLegend.setMulti(false);
 		propertyLegend.setIsHidden(true);
@@ -489,5 +495,17 @@ public class OptionLegend {
 		groupLegend.setDescription("The property group to read option properties for");
 		return groupLegend;
 	}
+
+    @Override
+    public int compareTo(OptionLegend yours) {
+        if (yours == null) {
+            // I win
+            return 1;
+        } else {
+            // I want an alphabetical sort
+            return this.getName().compareToIgnoreCase(yours.getName());
+        }
+    }
+    
 }
 
