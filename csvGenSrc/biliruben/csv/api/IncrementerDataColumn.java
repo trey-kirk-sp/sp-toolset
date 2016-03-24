@@ -40,13 +40,18 @@ public class IncrementerDataColumn extends DataColumn {
                 value = String.format("%1$" + _padding + "s", String.valueOf(_current));
             }
             value = value.replace(" ", "0");
-            _current += _incr;
             return value;
+        }
+
+         @Override
+        public void reset() {
+            super.reset();
+            _current += _incr;
         }
     }
 
-    public IncrementerDataColumn(String columnName, ColumnType type) {
-        super(columnName, type);
+    public IncrementerDataColumn(String columnName) {
+        super(columnName);
         this._incrStart = DEFAULT_INCR_START;
         this._incrPadding = DEFAULT_INCR_PADDING;
     }
@@ -54,7 +59,10 @@ public class IncrementerDataColumn extends DataColumn {
     @Override
     public void apply(Map<String, Object> detailMap) {
         super.apply(detailMap);
-        setIncrementStart(Integer.valueOf((String)detailMap.get(ARG_START)));
+        String incrStartStr = (String)detailMap.get(ARG_START);
+        if (incrStartStr != null && !"".equals(incrStartStr.trim())) {
+            setIncrementStart(Integer.valueOf(incrStartStr));
+        }
         String padding = (String) detailMap.get(ARG_PADDING);
         if (padding != null && !"".equals(padding.trim())) {
             setIncrementPadding(Integer.valueOf(padding));

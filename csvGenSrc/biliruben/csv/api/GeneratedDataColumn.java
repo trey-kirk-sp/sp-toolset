@@ -63,8 +63,8 @@ public class GeneratedDataColumn extends RandomDataColumn {
     }
 
 
-    public GeneratedDataColumn(String columnName, ColumnType type) {
-        super(columnName, type);
+    public GeneratedDataColumn(String columnName) {
+        super(columnName);
     }
 
     @Override

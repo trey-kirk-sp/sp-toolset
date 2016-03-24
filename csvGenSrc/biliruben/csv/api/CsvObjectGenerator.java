@@ -142,4 +142,8 @@ public class CsvObjectGenerator {
     public void setFields(String[] fields) {
         _fields = fields;
     }
+    
+    public int getObjects() {
+        return _objects;
+    }
 }

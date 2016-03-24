@@ -82,7 +82,7 @@ public class FileDataColumn extends RandomDataColumn {
     }
 
     public FileDataColumn(String columnName, ColumnType type) {
-        super(columnName, type);
+        super(columnName);
         switch (type) {
         case file:
             this._random = true; break;

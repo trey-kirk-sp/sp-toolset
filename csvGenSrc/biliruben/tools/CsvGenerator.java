@@ -13,6 +13,7 @@ import biliruben.csv.api.DataColumn;
 import biliruben.csv.api.DerivedDataColumn;
 import biliruben.csv.api.FileDataColumn;
 import biliruben.csv.api.GeneratedDataColumn;
+import biliruben.csv.api.HierarchyDataColumn;
 import biliruben.csv.api.IncrementerDataColumn;
 import biliruben.csv.api.RandomDataColumn;
 
@@ -118,16 +119,19 @@ public class CsvGenerator {
                 dc = new FileDataColumn(columnName, type);
                 break;
             case generated:
-                dc = new GeneratedDataColumn(columnName, type);
+                dc = new GeneratedDataColumn(columnName);
                 break;
             case derived:
-                dc = new DerivedDataColumn(columnName, type, _generator);
+                dc = new DerivedDataColumn(columnName, _generator);
                 break;
             case incrementer:
-                dc = new IncrementerDataColumn(columnName, type);
+                dc = new IncrementerDataColumn(columnName);
                 break;
             case constant:
-                dc = new ConstantValueDataColumn(columnName, type);
+                dc = new ConstantValueDataColumn(columnName);
+                break;
+            case hierarchy:
+                dc = new HierarchyDataColumn(columnName, _generator);
                 break;
             }
             dc.apply(detailMap);

@@ -48,13 +48,16 @@ public class DerivedDataColumn extends DataColumn {
             Formatter f = new Formatter(buff);
             f.format(this._prettyFormat, tokens);
             f.flush();
-            incrementNext(buff.toString());
-            return buff.toString();
+            // Being derived and being asked to return unique values is tricky, so
+            // we ignore any unique checking
+            String formatted = buff.toString();
+            incrementNext(formatted);
+            return formatted;
         }
     }
 
-    public DerivedDataColumn(String columnName, ColumnType type, CsvObjectGenerator generator) {
-        super(columnName, type);
+    public DerivedDataColumn(String columnName, CsvObjectGenerator generator) {
+        super(columnName);
         this._generator = generator;
     }
 

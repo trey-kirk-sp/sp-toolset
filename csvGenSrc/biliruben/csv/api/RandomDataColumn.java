@@ -8,27 +8,33 @@ public abstract class RandomDataColumn extends DataColumn {
     protected static abstract class RandomValueIterator extends ValueIterator {
 
         private Random _rando;
+        private long _seed;
 
         public RandomValueIterator(RandomDataColumn rdc) {
             super(rdc);
-            long seed = rdc.getRandomSeed();
-            if (seed == 0L) {
-                seed = System.currentTimeMillis();
+            _seed = rdc.getRandomSeed();
+            if (_seed == 0L) {
+                _seed = System.currentTimeMillis();
             }
-            _rando = new Random(seed);
-            System.out.println(rdc.getColumnName() + " random seed: " + seed);
+            _rando = new Random(_seed);
+            //System.out.println(rdc.getColumnName() + " random seed: " + _seed);
         }
         
         protected Random getRandom() {
             return _rando;
+        }
+        
+        @Override
+        public void reset() {
+            super.reset();
         }
     }
     
     public static String ARG_RANDOM_SEED = "randomSeed";
     private long _randomSeed = 0L;
 
-    public RandomDataColumn(String columnName, ColumnType type) {
-        super(columnName, type);
+    public RandomDataColumn(String columnName) {
+        super(columnName);
     }
     
     public void setRandomSeed(long seed) {

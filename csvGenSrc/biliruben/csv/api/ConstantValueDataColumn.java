@@ -31,8 +31,8 @@ public class ConstantValueDataColumn extends DataColumn {
         }
     }
 
-    public ConstantValueDataColumn(String columnName, ColumnType type) {
-        super(columnName, type);
+    public ConstantValueDataColumn(String columnName) {
+        super(columnName);
     }
 
     @Override

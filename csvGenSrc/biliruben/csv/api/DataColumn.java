@@ -24,11 +24,17 @@ public abstract class DataColumn {
         private Set<String> _previousValues;
         private String _lastValue;
         private boolean _isMulti;
+        private DataColumn _dc;
 
         public ValueIterator(DataColumn dc) {
+            _dc = dc;
             _isUnique = dc.isUnique();
             _isMulti = dc.isMulti();
             _previousValues = new HashSet<String>();
+        }
+        
+        protected DataColumn getDataColumn() {
+            return _dc;
         }
 
         public void reset() {
@@ -51,6 +57,11 @@ public abstract class DataColumn {
             return true;
         }
 
+        /**
+         * Tracking method for implementations requiring unique values. It adds the candidate
+         * value to the previousValues list and determines if the value was unique. If it was,
+         * the lastValue record is updated with the candidate value as well
+         */
         protected boolean incrementNext(String nextValue) {
             boolean added = _previousValues.add(nextValue);
             if (!_isUnique || added) {
@@ -63,6 +74,10 @@ public abstract class DataColumn {
             return added;
         }
 
+        /**
+         * For implementations that will not generate multiple values per object, they may return the 'lastValue' here providing
+         * they submitted the value to {@link #incrementNext(String)}
+         */
         protected String getLastValue() {
             return _lastValue;
         }
@@ -99,7 +114,6 @@ public abstract class DataColumn {
      * in this class for later reference.
      *****************/
     private boolean _isMulti;
-    private ColumnType _type;
     private boolean _isUnique;
     private ValueIterator _valueIterator;
     private String _columnName;
@@ -111,16 +125,16 @@ public abstract class DataColumn {
         serialFile,
         derived,
         constant,
-        incrementer
+        incrementer,
+        hierarchy
     };
 
     /**
      * Primary constructor
      * @param columnName Name of the column definition
      */
-    public DataColumn(String columnName, ColumnType type) {
+    public DataColumn(String columnName) {
         _isMulti = DEFAULT_IS_MULTI;
-        _type = type;
         _isUnique = DEFAULT_IS_UNIQUE;
         _columnName = columnName;
         _applied = false;
@@ -157,13 +171,6 @@ public abstract class DataColumn {
     public void setMulti(boolean isMulti) {
         this._isMulti = isMulti;
     }
-    public ColumnType getType() {
-        return _type;
-    }
-    public void setType(ColumnType type) {
-        this._type = type;
-    }
-    
 
     /**
      * Returns the next value from the value iterator.  It may
