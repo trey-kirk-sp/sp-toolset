@@ -20,9 +20,10 @@ public abstract class RandomDataColumn extends DataColumn {
             super(rdc);
             _seed = rdc.getRandomSeed();
             if (_seed == 0L) {
-                _seed = System.currentTimeMillis();
+                _rando = new Random();
+            } else {
+                _rando = new Random(_seed);
             }
-            _rando = new Random(_seed);
             //System.out.println(rdc.getColumnName() + " random seed: " + _seed);
         }
         

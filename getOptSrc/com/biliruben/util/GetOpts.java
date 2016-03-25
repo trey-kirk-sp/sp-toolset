@@ -236,20 +236,6 @@ public class GetOpts {
      */
     public String genUsage(boolean showFull) {
         _log.debug("Generating usage, full option: " + showFull);
-        if (!showFull) {
-            // set properties Legend "hideness"
-            OptionLegend properties = _masterLegend.get(OptionLegend.OPT_PROPERTY_FILE);
-            properties.setIsHidden(_propertiesLegendIsHidden);
-        } else {
-            // full description, unhide everything.
-            for (OptionLegend legend : _masterLegend.values()) {
-                if (!legend.getName().equals(OptionLegend.OPT_DEFAULT_NAME)) {
-                    // still don't want to unhide the default option
-                    legend.setIsHidden(false);
-                }
-            }
-        }
-
 
         // Initializes the StringBuffer that will be used to create the usage information
         StringBuffer usage = new StringBuffer(256);
@@ -261,9 +247,12 @@ public class GetOpts {
         Iterator<OptionLegend> legendsIt = legends.iterator();
         while (legendsIt.hasNext()) {
             OptionLegend legend = legendsIt.next();
+            if (legend.isHidden() && !showFull) {
+                // not this one
+                continue;
+            }
             // Don't try to generate usage for the DEFAULT OptionLegend
-            if (!legend.getName().equals(OptionLegend.OPT_DEFAULT_NAME) 
-                    && !legend.isHidden()) {
+            if (!legend.getName().equals(OptionLegend.OPT_DEFAULT_NAME)) {
                 // Append '-optionname' to the description text
                 description.append("\n\t" + _optSwitch + legend.getName() + ": ");
                 // If there is a null value for a legend's description, change it to an empty String
@@ -731,6 +720,19 @@ public class GetOpts {
     public void addLegend(OptionLegend legend) {
         _log.debug("Adding legend: " + legend);
         _masterLegend.put(legend.getName(), legend);
+    }
+    
+    /**
+     * Fetches the requested OptionLegend by name. Typically to then modify it
+     * @param legend
+     * @return
+     */
+    public OptionLegend getLegend(String legend) {
+        return _masterLegend.get(legend);
+    }
+    
+    public boolean removeLegend(String legend) {
+        return _masterLegend.remove(legend) != null;
     }
 
     public void addAllLegends(Collection<OptionLegend> legends) {

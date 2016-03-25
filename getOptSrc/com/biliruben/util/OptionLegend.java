@@ -74,8 +74,8 @@ public class OptionLegend implements Comparable<OptionLegend>{
 	 */
 	protected static final String OPT_DEFAULT_NAME = "DEFAULT";
 	public static final String OPT_PROPERTY_FILE = "properties";
-	protected static final String OPT_HELP = "?";
-	protected static final String OPT_PROPERTY_GROUP = "propertyGroup";
+	public static final String OPT_HELP = "?";
+	public static final String OPT_PROPERTY_GROUP = "propertyGroup";
 
 	private boolean _required = false;
 	private boolean _multi = false;
