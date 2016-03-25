@@ -11,8 +11,10 @@ import java.util.Random;
 import com.biliruben.util.csv.CSVRecord;
 
 /**
- * CSV data generator.  Uses {@link DataColumn} objects
- * to define what data is generated in the CSV.
+ * CSV data generator.  Uses {@link DataColumn} objects to define what data is generated 
+ * in the CSV. The entire framework relies on the notion of data vs object. A line of data
+ * is a single line of tokens in a CSV. An object may be represented by one or more lines
+ * of data.
  * @author trey.kirk
  *
  */
@@ -43,6 +45,11 @@ public class CsvObjectGenerator {
      * Number of multiple values to use per object
      */
     private int _multiMax;
+    
+    /*
+     * Minimum number of multiple values to use per object
+     */
+    private int _multiMin;
 
     private String[] _fields;
 
@@ -52,10 +59,11 @@ public class CsvObjectGenerator {
      * @param objects number of objects to represent in the CSV output
      * @param multiMax number of multi-valued attributes to use (maximum) per object
      */
-    public CsvObjectGenerator(Writer csvWriter, int objects, int multiMax) {
+    public CsvObjectGenerator(Writer csvWriter, int objects, int multiMin, int multiMax) {
         _writer = csvWriter;
         _objects = objects;
         _multiMax = multiMax > 0 ? multiMax : 1;
+        _multiMin = multiMin > 0 ? multiMin : 1;
     }
 
     public void setColumns(List<DataColumn> columns) {
@@ -102,8 +110,11 @@ public class CsvObjectGenerator {
     private void buildCSVRecord() {
         _csvRecord = new CSVRecord(getRecordFields());
         Random rando = new Random();
+        // To determine the number of multi-values to generate, we have to get a random
+        // number from 0 to delta (min/max) and add min
+        int deltaMulti = _multiMax - _multiMin + 1; // All deltas must have a difference of +1 the actual difference
         for (int object = 0; object < _objects; object++) {
-            int actualMulti = rando.nextInt(_multiMax) + 1;
+            int actualMulti = rando.nextInt(deltaMulti) + _multiMin;
             for (int multi = 0; multi < actualMulti; multi++) {
                 Map<String, String> dataLine = new HashMap<String, String>();
                 for (DataColumn column : _columns) {

@@ -8,8 +8,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
+/**
+ * Uses a file containing a list of data tokens. Depending on the provided
+ * {@link ColumnType}, this may be a serial iteration or a random iteration.
+ * @author trey.kirk
+ *
+ */
 public class FileDataColumn extends RandomDataColumn {
 
     private static final String ARG_FILE = "file";

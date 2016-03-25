@@ -7,7 +7,35 @@ import java.util.Set;
 
 /**
  * Basic class that defines the content and behavior of one column in a data set.  Specifically,
- * we intend this to be for CSV.  However, it doesn't depend on any output format
+ * we intend this to be for CSV.  However, it doesn't depend on any output format. Data column
+ * iteration is not intuitive, but you'll get used to it. The important distinction is 'value' vs
+ * 'object'. A value is a discrete piece of data to be incorporated into an object. An object may
+ * be comprised of multiple pieces of data from this DataColumn:
+ * - On 'nextValue': returns the next value with the provided stipulation:
+ *      - If the DataColumn is a 'multi' column, another possible value of the defined set is provided
+ *      - If the DataColumn is a 'multi' and 'unique' column, another unique possible value of the defined set is
+ *        provided. If a unique value cannot be found, a previous value is instead provided
+ *      - If the DataColumn is not a 'multi' column, the nextValue is alwasy the same value
+ * - On 'reset': the underlying data value iterator increments to a new (or possibly previous) value. For
+ *      'multi' data columns, the previously used values list is cleared thus allowing for previously used
+ *      uniques
+ *      
+ * For example, given the following two objects:
+ * acctId,count,title,firstName,lastName,group
+ * LJAS001,000001,Archduke,Leona,Jastrzebski,DBAs
+ * LJAS001,000001,Archduke,Leona,Jastrzebski,CompCommittee
+ * LJAS001,000001,Archduke,Leona,Jastrzebski,FinancialAnalyist
+ * LJAS001,000001,Archduke,Leona,Jastrzebski,ServerRoomToken
+ * CKAD002,000002,Assistant to the President & Deputy National Security Advisor,Charita,Kady,FinancialAnalyist
+ * CKAD002,000002,Assistant to the President & Deputy National Security Advisor,Charita,Kady,PayrollAnalysis
+ * CKAD002,000002,Assistant to the President & Deputy National Security Advisor,Charita,Kady,SecCompliance
+ * 
+ * The DataColumn 'group' is a multi column and returns multiple (and unique) data for each data line for both objects.
+ * However, it's not garuanteed that unqiue values in the first object are also unique when compared to the second object,
+ * 'FinancialAnalyst' being the case in point.
+ * DataColumns 'acctId', 'count', 'title', 'firstName', & 'lastName' were non-multi DataColumns. For each object, they
+ * returned data pertinent to the object, but duplicated values for each unique data line of those object.
+ * 
  * @author trey.kirk
  *
  */
@@ -59,18 +87,15 @@ public abstract class DataColumn {
 
         /**
          * Tracking method for implementations requiring unique values. It adds the candidate
-         * value to the previousValues list and determines if the value was unique. If it was,
-         * the lastValue record is updated with the candidate value as well
+         * value to the previousValues list and determines if the value was unique.
+         * The submitted value is always saved as the lastValue
          */
         protected boolean incrementNext(String nextValue) {
             boolean added = _previousValues.add(nextValue);
             if (!_isUnique || added) {
                 added = true;
             }
-            if (added) {
-                _lastValue = nextValue;
-            }
-
+           _lastValue = nextValue;
             return added;
         }
 
@@ -80,6 +105,10 @@ public abstract class DataColumn {
          */
         protected String getLastValue() {
             return _lastValue;
+        }
+        
+        protected Set<String> getLastValues() {
+            return _previousValues;
         }
 
         @Override
@@ -126,7 +155,8 @@ public abstract class DataColumn {
         derived,
         constant,
         incrementer,
-        hierarchy
+        hierarchy,
+        csv
     };
 
     /**

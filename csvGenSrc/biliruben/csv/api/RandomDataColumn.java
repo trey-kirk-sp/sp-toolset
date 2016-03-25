@@ -3,6 +3,12 @@ package biliruben.csv.api;
 import java.util.Map;
 import java.util.Random;
 
+/**
+ * This DataColumn supports random data selection. This class is not concerned with the underlying
+ * data set. It only provides the mechanism to randomize the selection process
+ * @author trey.kirk
+ *
+ */
 public abstract class RandomDataColumn extends DataColumn {
     
     protected static abstract class RandomValueIterator extends ValueIterator {

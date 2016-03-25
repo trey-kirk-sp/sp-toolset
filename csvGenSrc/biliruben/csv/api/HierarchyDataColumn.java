@@ -6,7 +6,8 @@ import java.util.Map;
 
 /**
  * Based on a given node column, values are returned as what is intended to be the
- * current object's parent node.
+ * current object's parent node. For example, in an object that represents and employee
+ * and requires a manager value, this DataColumn provides the manager value.
  * @author trey.kirk
  *
  */

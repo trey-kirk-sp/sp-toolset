@@ -1,8 +1,12 @@
 package biliruben.csv.api;
 
 import java.util.Map;
-import java.util.Random;
 
+/**
+ * Generates a random string based on the provided character class and min/max limits
+ * @author trey.kirk
+ *
+ */
 public class GeneratedDataColumn extends RandomDataColumn {
 
     private static final String ARG_MAX_LENGTH = "maxLength";

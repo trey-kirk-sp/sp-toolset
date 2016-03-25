@@ -38,6 +38,12 @@ public class ConstantValueDataColumn extends DataColumn {
     @Override
     public void apply(Map<String, Object> detailMap) {
         super.apply(detailMap);
+        if (isMulti()) {
+            throw new IllegalStateException("multi = true: you're pretty funny. " + getClass().getCanonicalName() + " is a constant value iterator. Don't get cheeky.");
+        }
+        if (isUnique()) {
+            throw new IllegalStateException("unqiue = true: What part of 'constant value' did you not understand?");
+        }
         setConstant((String) detailMap.get(ARG_CONSTANT));
     }
     

@@ -8,6 +8,7 @@ import java.io.Writer;
 import java.util.Map;
 
 import biliruben.csv.api.ConstantValueDataColumn;
+import biliruben.csv.api.CsvDataColumn;
 import biliruben.csv.api.CsvObjectGenerator;
 import biliruben.csv.api.DataColumn;
 import biliruben.csv.api.DerivedDataColumn;
@@ -97,7 +98,13 @@ public class CsvGenerator {
             multiMax = Integer.valueOf(sMultiMax);
         }
         
-        _generator = new CsvObjectGenerator(writer, objects, multiMax);
+        String sMultiMin = (String)propertyMap.get("multiMin");
+        int multiMin = 1;
+        if (sMultiMin != null && !"".equals(sMultiMin)) {
+            multiMin = Integer.valueOf(sMultiMin);
+        }
+        
+        _generator = new CsvObjectGenerator(writer, objects, multiMin, multiMax);
         
         String fields = (String)propertyMap.get("fields");
         if (fields != null) {
@@ -132,6 +139,9 @@ public class CsvGenerator {
                 break;
             case hierarchy:
                 dc = new HierarchyDataColumn(columnName, _generator);
+                break;
+            case csv:
+                dc = new CsvDataColumn(columnName);
                 break;
             }
             dc.apply(detailMap);
