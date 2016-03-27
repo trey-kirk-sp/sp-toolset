@@ -122,6 +122,7 @@ public class CsvObjectGenerator {
                         if (fieldName.equals(column.getColumnName())) {
                             // only put fields of data in our csv
                             dataLine.put(column.getColumnName(), column.nextValue(this));
+                            break; // for loop
                         }
                     }
                 }
