@@ -156,12 +156,16 @@ public class CsvGenerator {
         OptionLegend legend = new OptionLegend(OPT_PROPERTY_FILE);
         legend.setRequired(true);
         legend.setDescription("Property file with column definitions");
+        legend.setIsHidden(false);
         _opts.addLegend(legend);
 
         legend = new OptionLegend(OPT_CSV_FILE);
         legend.setRequired(false);
         legend.setDescription("Target CSV file.  If no file is specified, CSV data is sent to STDOUT");
         _opts.addLegend(legend);
+        
+        // GetOpts has a default legend that will only confuse things if we leave it in, so ditch it
+        _opts.removeLegend(OptionLegend.OPT_PROPERTY_GROUP);
 
         _opts.parseOpts(args);
     }

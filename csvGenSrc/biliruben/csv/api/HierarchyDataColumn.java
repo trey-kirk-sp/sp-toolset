@@ -1,6 +1,7 @@
 package biliruben.csv.api;
 
 import java.util.ArrayDeque;
+import java.util.LinkedList;
 import java.util.Map;
 
 
@@ -19,7 +20,8 @@ public class HierarchyDataColumn extends DataColumn {
         private int _siblingLimit;
         private int _currentSiblings;
         private DataColumn _nodeDataColumn;
-        private ArrayDeque<String> _nodeStack;
+        private LinkedList<String> _nodeStack;
+        private boolean _gotNext;
 
         public HierarchyDataValueIterator(HierarchyDataColumn dc, String nodeColumn) {
             super(dc);
@@ -27,12 +29,14 @@ public class HierarchyDataColumn extends DataColumn {
             _currentSiblings = 0;
             _siblingLimit = dc.getSiblings();
             _nodeDataColumn = getGenerator().getDataColumn(nodeColumn);
-            _nodeStack = new ArrayDeque<String>();
+            _nodeStack = new LinkedList<String>();
         }
         
         @Override
         public void reset() {
             super.reset();
+            String nextNodeValue = _nodeDataColumn.nextValue(getGenerator());
+            _nodeStack.add(nextNodeValue); // tack it onto the end
             // When we're reset, determine if we've reached our sibling limit
             // If so, get the next value in our Node DC
             _currentSiblings++;
@@ -46,10 +50,6 @@ public class HierarchyDataColumn extends DataColumn {
 
         @Override
         public String next() {
-            String currentNodeValue = _nodeDataColumn.nextValue(getGenerator());
-            if (!_nodeStack.contains(currentNodeValue)) {
-                _nodeStack.add(currentNodeValue); // tack it onto the end
-            }
             return _currentNode;
         }
     }
