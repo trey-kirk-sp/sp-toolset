@@ -156,6 +156,7 @@ public abstract class DataColumn {
         constant,
         incrementer,
         hierarchy,
+        uuid,
         csv
     };
 
