@@ -53,6 +53,10 @@ public class CsvObjectGenerator {
 
     private String[] _fields;
 
+    private String _delim;
+    
+    private boolean _printQuotes = false;
+
     /**
      * Constructor
      * @param csvWriter where the CSV output is written to
@@ -109,6 +113,11 @@ public class CsvObjectGenerator {
 
     private void buildCSVRecord() {
         _csvRecord = new CSVRecord(getRecordFields());
+        // TODO: Override the csvRecord delimiter with user provided from props file
+        if (_delim != null) {
+            _csvRecord.setDelimiter(_delim);
+        }
+        _csvRecord.setNoQuotes(_printQuotes);
         Random rando = new Random();
         // To determine the number of multi-values to generate, we have to get a random
         // number from 0 to delta (min/max) and add min
@@ -153,6 +162,14 @@ public class CsvObjectGenerator {
 
     public void setFields(String[] fields) {
         _fields = fields;
+    }
+    
+    public void setCSVDelimiter(String delim) {
+        _delim = delim;
+    }
+    
+    public void setPrintQuotes(boolean printQuotes) {
+        _printQuotes = printQuotes;
     }
     
     public int getObjects() {

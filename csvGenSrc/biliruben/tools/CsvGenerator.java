@@ -17,6 +17,7 @@ import biliruben.csv.api.GeneratedDataColumn;
 import biliruben.csv.api.HierarchyDataColumn;
 import biliruben.csv.api.IncrementerDataColumn;
 import biliruben.csv.api.RandomDataColumn;
+import biliruben.csv.api.UUIDDataColumn;
 
 import com.biliruben.util.GetOpts;
 import com.biliruben.util.OptionLegend;
@@ -106,6 +107,16 @@ public class CsvGenerator {
         
         _generator = new CsvObjectGenerator(writer, objects, multiMin, multiMax);
         
+        String delim = (String)propertyMap.get("delimiter");
+        if (delim != null && !"".equals(delim.trim())) {
+            _generator.setCSVDelimiter(delim);
+        }
+        
+        String printQuotes = (String)propertyMap.get("printQuotes");
+        if (printQuotes != null && !"".equals(printQuotes.trim())) {
+            _generator.setPrintQuotes(Boolean.valueOf(printQuotes));
+        }
+        
         String fields = (String)propertyMap.get("fields");
         if (fields != null) {
             String[] columnsArry = fields.split(",");
@@ -142,6 +153,9 @@ public class CsvGenerator {
                 break;
             case csv:
                 dc = new CsvDataColumn(columnName);
+                break;
+            case uuid:
+                dc = new UUIDDataColumn(columnName);
                 break;
             }
             dc.apply(detailMap);

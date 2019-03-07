@@ -28,6 +28,7 @@ import sailpoint.services.log.api.LogTestParse;
 import sailpoint.services.log.api.LogTimer;
 import sailpoint.services.log.api.LogTrender;
 import sailpoint.services.log.api.MultiFileLog4jLineIterator;
+import sailpoint.services.log.api.TimelineAnalyzer;
 import sailpoint.services.log.api.TokenFilterAnalyzer;
 
 import com.biliruben.util.GetOpts;
@@ -60,6 +61,7 @@ public class LogAnalyzerApp {
     private static final String ANALYZER_FILTER = "filter";
     private static final String ANALYZER_TEST = "test";
     private static final String ANALYZER_DUPE = "duplicates";
+    private static final String ANALYZER_TIME = "timeline";
     private static final String[] TYPE_ALLOWED_VALUES = {
         ANALYZER_TIMER,
         ANALYZER_TRENDER,
@@ -69,6 +71,7 @@ public class LogAnalyzerApp {
         ANALYZER_FILTER,
         ANALYZER_FORMATTER,
         ANALYZER_TEST,
+        ANALYZER_TIME,
         ANALYZER_DUPE
     };
 
@@ -173,6 +176,9 @@ public class LogAnalyzerApp {
             } else if (type.equals(ANALYZER_DUPE)) {
                 DupeFilterAnalyzer dupeAnalyzer = new DupeFilterAnalyzer(_layoutPattern);
                 _analyzers.add(dupeAnalyzer);
+            } else if (type.equals(ANALYZER_TIME)) {
+                TimelineAnalyzer timelineAnalyzer = new TimelineAnalyzer(_layoutPattern);
+                _analyzers.add(timelineAnalyzer);
             }
         }
 
@@ -299,6 +305,10 @@ public class LogAnalyzerApp {
                 "\n\ttrender: Compiles a trend of method calls for each method over a defined segment of time." +
                 "\n\tjoiner: Joins the provided logs based on individual file names and / or file name filters.  The resulting log will be contiguous and in order" +
                 "\n\tmethod: Formats call stacks for the target method." + 
+                "\n\t" + ANALYZER_TIME + ": Reorders log events into time order." +
+                "\n\t" + ANALYZER_DUPE + ": Filters duplicate events." +
+                "\n\t" + ANALYZER_FORMATTER + ": Formats events to clearly indicate method calls." +
+                "\n\t" + ANALYZER_TEST + ": Tests event parsing." +
                 "\n\tfilter: Filters the log events");
         _opts.parseOpts(args);
 
@@ -375,8 +385,13 @@ public class LogAnalyzerApp {
      * Outputs all the summaries
      */
     private static void summarize() {
+        boolean first = true;
         for (LogAnalyzer analyzer : _analyzers) {
-            _out.println(analyzer.compileSummary());
+            if (!first) {
+                _out.print("\n");
+            }
+            first = false;
+            _out.print(analyzer.compileSummary());
         }	
     }
 }

@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sailpoint PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<sailpoint>
+    <TaskDefinition name="IIQETN-5544 - Reproduction Builder" executor="sailpoint.task.IIQETN5544_TaskExecutor" resultAction="Delete" type="Generic" >
+        <Description>
+            Custom task to build objects in a specific fashion to reproduce all facets of IIQETN-5544. Note: if a server is unexpectedly missing from
+            the options, go and make sure it's online with a working heartbeat before continuing.
+        </Description>
+        <Signature>
+            <Inputs>
+                <!-- I need to know: 
+                    - Which server is the Task server
+                    - Which server is the Partition server
+                    - Which server is the Check Deleted server -->
+                <Argument name="aggTask" required="true" type="TaskDefinition">
+                    <Prompt>Base aggregation task</Prompt>
+                </Argument>
+                <Argument name="taskServer" required="true" type="Server">
+                    <!-- can Server be a type for this?? YASS!!! -->
+                    <Prompt>Server that will act as the main task server. Aka the 'T' server</Prompt>
+                </Argument>
+                <Argument name="partitionServer" required="true" type="Server">
+                    <Prompt>Server that will execute the aggregation partition. Aka the 'P' server</Prompt>
+                </Argument>
+                <Argument name="checkDeleteServer" required="true" type="Server">
+                    <Prompt>Server that will execute the check deleted partition. Aka the 'D' server</Prompt>
+                </Argument>
+            </Inputs>
+            <Returns>
+                <Argument name="result" type="string">
+                    <Prompt>Indicates the TaskResult to evaluate</Prompt>
+                </Argument>
+            </Returns>
+        </Signature>
+        
+    </TaskDefinition>
+</sailpoint>
