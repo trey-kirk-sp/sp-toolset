@@ -32,6 +32,7 @@ public abstract class AbstractTraceAspectLogAnalyzer extends FastLogAnalyzer {
 
     private Map<String,Stack<String[]>> _threads;
     private int _propNameMaxLength = 10;
+    private boolean _adjustDate;
 
     /**
      * Default thread name when one is not available
@@ -84,6 +85,7 @@ public abstract class AbstractTraceAspectLogAnalyzer extends FastLogAnalyzer {
             _layoutPattern = DEFAULT_LAYOUT_PATTERN;
         }
         _converter = new Log4jPatternConverter(_layoutPattern);
+        _adjustDate = true;
         _log.debug("converter: " + _converter);
     }
 
@@ -157,6 +159,10 @@ public abstract class AbstractTraceAspectLogAnalyzer extends FastLogAnalyzer {
         }
         // by default we always return true. Let ancestors overwrite and decide otherwise
         return true;
+    }
+    
+    public void setAdjustDate(boolean adjustDate) {
+        autoCorrectDates = adjustDate;
     }
 
     /**
