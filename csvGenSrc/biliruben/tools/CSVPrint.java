@@ -8,9 +8,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.biliruben.util.GetOpts;
 import com.biliruben.util.OptionLegend;
@@ -31,6 +34,7 @@ public class CSVPrint {
     private static final String OPT_OUTPUT_FILE = "outFile";
     private static final String OPT_NO_HEADER = "noHeader";
     private static final String OPT_MERGE_FROM_COLUMN = "mergeCol";
+    private static final String OPT_RANDOMIZE = "randomize";
     private static GetOpts _opts;
 
     /**
@@ -47,10 +51,11 @@ public class CSVPrint {
         String outputFile = _opts.getStr(OPT_OUTPUT_FILE);
         String delim = _opts.getStr(OPT_OUTPUT_DELIM);
         Boolean noHeader = Boolean.valueOf(_opts.getStr(OPT_NO_HEADER));
+        Boolean randomize = Boolean.valueOf(_opts.getStr(OPT_RANDOMIZE));
         
         CSVSource csv = null;
         if (inputFiles.size() > 1) {
-            CSVRecord csvRecord = mergeCsv(inputFiles, columns, delim, mergeColumn);
+            CSVRecord csvRecord = mergeCsv(inputFiles, columns, delim, mergeColumn, randomize);
             CSVUtil.exportToCsv(csvRecord, new FileOutputStream(new File(outputFile)));
             return;
         } else {
@@ -74,7 +79,8 @@ public class CSVPrint {
         writer.close();
     }
     
-    private static CSVRecord mergeCsv(List<String> inputFiles, List<String> columns, String delim, String mergeColumn) throws FileNotFoundException {
+    private static CSVRecord mergeCsv(List<String> inputFiles, List<String> columns, String delim, 
+            String mergeColumn, boolean randomize) throws FileNotFoundException {
         Map<String, Map<String, String>> dataMap = new HashMap<String, Map<String, String>>();
         for (String file : inputFiles) {
             CSVSourceImpl csv = new CSVSourceImpl(new File(file), CSVType.WithHeader);
@@ -89,6 +95,7 @@ public class CSVPrint {
                 }
             }
         }
+
         CSVRecord record = new CSVRecord();
         for (Map<String, String> data : dataMap.values()) {
             record.addLine(data);
@@ -96,7 +103,12 @@ public class CSVPrint {
         return record;
     }
     
-    
+
+    private static void shuffleMap(Map<String, Map<String, String>> dataMap) {
+        List<String> keyList = new ArrayList<String>(dataMap.keySet());
+        Collections.shuffle(keyList);
+    }
+
     private static void print(Map<String, String> currentLineAsMap,
             Writer writer, List<String> columns, String delim) throws IOException {
         StringBuffer buff = new StringBuffer();
@@ -176,6 +188,12 @@ public class CSVPrint {
         legend.setFlag(true);
         _opts.addLegend(legend);
         
+        legend = new OptionLegend(OPT_RANDOMIZE, "Randomizes the output.");
+        legend.setFlag(true);
+        legend.setRequired(false);
+        legend.setDefaultValue("false");
+        //_opts.addLegend(legend);
+
         _opts.parseOpts(args);
         
         if (_opts.getList(OPT_CSV_FILE).size() > 1 && _opts.getStr(OPT_MERGE_FROM_COLUMN) == null) {

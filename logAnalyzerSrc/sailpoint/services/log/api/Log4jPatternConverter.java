@@ -132,6 +132,28 @@ public class Log4jPatternConverter {
         }
     }
 
+    private enum ConversionPattern {
+        ABSOLUTE ("ABSOLUTE", "HH:mm:ss,SSS"),
+        ISO8601 ("ISO8601", "yyyy-MM-dd HH:mm:ss,SSS"),
+        ISO8601_1 ("ISO8601-1", "yyyy-MM-dd'T'HH:mm:ss,SSS");
+        
+        private String _value;
+        private String _key;
+
+        ConversionPattern(String key, String value) {
+            this._key = key;
+            this._value = value;
+        }
+        
+        public String getKey() {
+            return this._key;
+        }
+        
+        public String getPattern() {
+            return this._value;
+        }
+        
+    }
     /*
      * Utility class to combine a Pattern with a group identifier (integer)
      */
@@ -159,10 +181,6 @@ public class Log4jPatternConverter {
         }
     }
 
-    private static String ABSOLUTE = "ABSOLUTE";
-    private static String ABSOLUTE_VALUE = "HH:mm:ss,SSS";
-    private static String ISO8601 = "ISO8601";
-    private static String ISO8601_VALUE = "yyyy-MM-dd HH:mm:ss,SSS";
     private static final String LOG4J_IDENTIFIERS = "cCdFlLmMnprtxX";
     private static final int PATTERN_FLAGS = Pattern.DOTALL;
     public static final String PRIORITY_ERROR = "ERROR";
@@ -258,56 +276,68 @@ public class Log4jPatternConverter {
      */
     private String convertSimpleDateFormat(String qualifier) {
 
-        // There are two pre-defined formats, convert them
-        if (ISO8601.equals(qualifier)) {
-            _simpleDateFormat = ISO8601_VALUE;
-            return convertSimpleDateFormat(ISO8601_VALUE);
-        } else if (ABSOLUTE.equals(qualifier)) {
-            _simpleDateFormat = ABSOLUTE_VALUE;
-            return convertSimpleDateFormat(ABSOLUTE_VALUE);
+        // There are pre-defined formats, convert them if specified
+        for (ConversionPattern pattern : ConversionPattern.values()) {
+            if (pattern.getKey().equals(qualifier)) {
+                _simpleDateFormat = pattern.getPattern();
+                return convertSimpleDateFormat(_simpleDateFormat);
+            }
         }
+
         _simpleDateFormat = qualifier;
         // example: dd MMMMM yyyy HH:mm:ss,SSS
         // need to conver the format to a regex.  this'll be fun
         StringBuffer regex = new StringBuffer();
         // iterate over all characters one at a time and convert them to their
         // regex equivalent.
+        boolean inGenericString = false;
+        boolean literalText = false;
         for (int i = 0; i < qualifier.length(); i++) {
             char c = qualifier.charAt(i);
-            boolean inGenericString = false;
-            switch (c) {
-            case 'G':
-                // G is 'text' of Era Desginator (AD / BC)
-                regex.append("[AB][CD]"); // Ok, so this allows 'AC' and 'BD'. Maybe instead us (AD)|(BC)
+            if (c != '\'' && literalText) {
                 inGenericString = false;
-                break;
-            case 'y':
-            case 'w':
-            case 'D':
-            case 'd':
-            case 'F':
-            case 'H':
-            case 'k':
-            case 'K':
-            case 'h':
-            case 'm':
-            case 's':
-            case 'S':
-                regex.append("\\d");
-                inGenericString = false;
-                break;
-            case 'M':
-            case 'E':
-            case 'z':
-            case 'Z':
-                if (!inGenericString) { 
-                    regex.append(".*"); // 0 or more of any character
-                } 
-                inGenericString = true; // "bunches" things like 'MMMM' to one '.*'
-                break;
-            default:
-                // literal text
-                regex.append(c);
+                regex.append(c); // just slap it in there
+            } else {
+                switch (c) {
+                    case 'G':
+                        // G is 'text' of Era Desginator (AD / BC)
+                        regex.append("[AB][CD]"); // Ok, so this allows 'AC' and 'BD'. Maybe instead us (AD)|(BC)
+                        inGenericString = false;
+                        break;
+                    case 'y':
+                    case 'w':
+                    case 'D':
+                    case 'd':
+                    case 'F':
+                    case 'H':
+                    case 'k':
+                    case 'K':
+                    case 'h':
+                    case 'm':
+                    case 's':
+                    case 'S':
+                        regex.append("\\d");
+                        inGenericString = false;
+                        break;
+                    case 'M':
+                    case 'E':
+                    case 'z':
+                    case 'Z':
+                        if (!inGenericString) { 
+                            regex.append(".*"); // 0 or more of any character
+                        } 
+                        inGenericString = true; // "bunches" things like 'MMMM' to one '.*'
+                        break;
+                    case '\'':
+                        // ' denotes a literal text. I was wrong to have default interpret literal text :-(
+                        // toggle our 'literalText' flag
+                        literalText = !literalText;
+                        break;
+                    default:
+                        // Usually whitespace
+                        regex.append(c);
+                        inGenericString = false;
+                }
             }
         }
 
