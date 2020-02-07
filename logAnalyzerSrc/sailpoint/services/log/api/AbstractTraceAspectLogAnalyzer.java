@@ -110,6 +110,11 @@ public abstract class AbstractTraceAspectLogAnalyzer extends FastLogAnalyzer {
         // 	- for now, let's just ditch what's pruned
         //  - future: save the fatty parts and append to the message
 
+        // Todo: Shouldn't the parent class FastLogAnalyzer do this part? If so:
+        // - addLogEvent would have to capture the event as a member var
+        // - FastLogAnalyzer could trim, if required
+        // - addLogEvent would then process the added event, or the caller would have
+        //   to make a separate call.
         _log.trace("Logging event: " + logEvent);
         logEvent = trimmedMessage(logEvent);
         _message = null;
@@ -128,9 +133,13 @@ public abstract class AbstractTraceAspectLogAnalyzer extends FastLogAnalyzer {
             List<String> methodSig = getMethodSignature();
             _log.debug("methodSig: " + methodSig);
             String categoryName = methodSig.get(0);
-            String methodName = methodSig.get(1);
+            String methodName = null;
+            String formattedMethodSig = null;
+            if (methodSig.size() > 1) {
+                methodName = methodSig.get(1);
+                formattedMethodSig = formatMethodSig(methodSig);
+            }
             String fullMethodName = categoryName + ":" + methodName;
-            String formattedMethodSig = formatMethodSig(methodSig);
             bundle[0] = fullMethodName;
             bundle[1] = formattedMethodSig;
 
