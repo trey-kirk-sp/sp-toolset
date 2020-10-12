@@ -11,12 +11,14 @@ public interface LogAnalyzer {
 	/**
 	 * The "feeder" method for the analyzer
 	 * @param message
+	 * @return boolean - Signals if the event was successfully parsed. The calling app can use that information
+	 * to determine if it should continue processing that event with other analyzers.
 	 */
 	public boolean addLogEvent (String message);
 	
 	/**
 	 * The "analysis" results method for the analyzer
-	 * @return
+	 * @return 
 	 */
 	public String compileSummary();
 	

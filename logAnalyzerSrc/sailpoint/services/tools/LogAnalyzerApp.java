@@ -23,10 +23,12 @@ import sailpoint.services.log.api.LogAnalyzer;
 import sailpoint.services.log.api.LogErrorSummary;
 import sailpoint.services.log.api.LogFilter;
 import sailpoint.services.log.api.LogFormatter;
+import sailpoint.services.log.api.LogMerger;
 import sailpoint.services.log.api.LogMethodCallSummary;
 import sailpoint.services.log.api.LogTestParse;
 import sailpoint.services.log.api.LogTimer;
 import sailpoint.services.log.api.LogTrender;
+import sailpoint.services.log.api.MethodIsolationAnalzyer;
 import sailpoint.services.log.api.MultiFileLog4jLineIterator;
 import sailpoint.services.log.api.TimelineAnalyzer;
 import sailpoint.services.log.api.TokenFilterAnalyzer;
@@ -62,6 +64,8 @@ public class LogAnalyzerApp {
     private static final String ANALYZER_TEST = "test";
     private static final String ANALYZER_DUPE = "duplicates";
     private static final String ANALYZER_TIME = "timeline";
+    private static final String ANALYZER_MERGE = "merge";
+    private static final String ANALYZER_ISOLATE = "isolate";
     private static final String[] TYPE_ALLOWED_VALUES = {
         ANALYZER_TIMER,
         ANALYZER_TRENDER,
@@ -72,7 +76,9 @@ public class LogAnalyzerApp {
         ANALYZER_FORMATTER,
         ANALYZER_TEST,
         ANALYZER_TIME,
-        ANALYZER_DUPE
+        ANALYZER_DUPE,
+        ANALYZER_MERGE,
+        ANALYZER_ISOLATE
     };
 
     // Command line arguments
@@ -179,6 +185,17 @@ public class LogAnalyzerApp {
             } else if (type.equals(ANALYZER_TIME)) {
                 TimelineAnalyzer timelineAnalyzer = new TimelineAnalyzer(_layoutPattern);
                 _analyzers.add(timelineAnalyzer);
+            } else if (type.equals(ANALYZER_MERGE)) {
+                LogMerger  merger = new LogMerger(_layoutPattern);
+                _analyzers.add(merger);
+            } else if (type.equals(ANALYZER_ISOLATE)) {
+                String className = _opts.getStr(OPT_TAREGET_CLASS);
+                String methodName = _opts.getStr(OPT_TARGET_METHOD);
+                if (methodName == null) {
+                    throw new OptionParseException(OPT_TARGET_METHOD + " must be specified when using analyzer type " + ANALYZER_METHOD, _opts, true);
+                }
+                MethodIsolationAnalzyer isolater = new MethodIsolationAnalzyer(className, methodName, _layoutPattern);
+                _analyzers.add(isolater);
             }
         }
 
@@ -309,6 +326,8 @@ public class LogAnalyzerApp {
                 "\n\t" + ANALYZER_DUPE + ": Filters duplicate events." +
                 "\n\t" + ANALYZER_FORMATTER + ": Formats events to clearly indicate method calls." +
                 "\n\t" + ANALYZER_TEST + ": Tests event parsing." +
+                "\n\t" + ANALYZER_MERGE + ": Merges multiple files. " +
+                "\n\t" + ANALYZER_ISOLATE + ": Isolates log events to only those within the call stack of the provided method." +
                 "\n\tfilter: Filters the log events");
         _opts.parseOpts(args);
 

@@ -17,6 +17,11 @@ public abstract class MethodStackAnalyzer extends AbstractTraceAspectLogAnalyzer
         _threads = new HashMap<String, Stack<String[]>>();
         _throwingMethods = new HashMap<String, Map<String,Stack<String[]>>>();
     }
+    
+    String formatMethodFullName (String categoryName, String methodName) {
+        String fullMethodName = categoryName + ":" + methodName;
+        return fullMethodName;
+    }
 
     /**
      * For each log event, test if has an 'Entering' value and capture the method signature information.  Otherwise, test
@@ -38,7 +43,7 @@ public abstract class MethodStackAnalyzer extends AbstractTraceAspectLogAnalyzer
 
             if (isEntering()) {
                 _log.debug("methodSig: " + methodSig);
-                String fullMethodName = categoryName + ":" + methodName;
+                String fullMethodName = formatMethodFullName(categoryName, methodName);
                 String formattedMethodSig = formatMethodSig(methodSig);
                 bundle[0] = fullMethodName;
                 bundle[1] = formattedMethodSig;
