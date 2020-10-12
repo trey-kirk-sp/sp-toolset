@@ -32,7 +32,7 @@ function BaseListResult (resources) {
     } else {
         this.totalResults = 0;
     }
-    this.resources = resources;
+    this.Resources = resources;
 };
 
 // Store the DB as a big array of 'resources'. use their Schema values to populate various paths
